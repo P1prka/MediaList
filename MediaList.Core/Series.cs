@@ -34,6 +34,13 @@ public class Series : MediaItem
 
     public override string TypeName => "Series";
 
+    public override string MainActionText =>
+        Status == MediaStatus.WantToWatch ? "▶ Start" : "+1 episode";
+
+    public override bool HasNextSeason => Status == MediaStatus.Watching;
+
+    public override bool ShowProgress => Status == MediaStatus.Watching;
+
     public int TotalEpisodes => EpisodesPerSeason.Sum();
 
     public int WatchedEpisodes
@@ -50,9 +57,10 @@ public class Series : MediaItem
         }
     }
 
-    public int ProgressPercent => TotalEpisodes == 0 ? 0 : WatchedEpisodes * 100 / TotalEpisodes;
+    public override int ProgressPercent =>
+        TotalEpisodes == 0 ? 0 : WatchedEpisodes * 100 / TotalEpisodes;
 
-    public string ProgressText =>
+    public override string ProgressText =>
         Status == MediaStatus.Watched
             ? "All seasons watched"
             : $"S{CurrentSeason} · E{CurrentEpisode}/{EpisodesPerSeason[CurrentSeason - 1]}";
@@ -87,13 +95,25 @@ public class Series : MediaItem
         CurrentEpisode = currentEpisode;
     }
 
+    public override void DoMainAction()
+    {
+        if (Status == MediaStatus.WantToWatch)
+        {
+            StartWatching();
+        }
+        else
+        {
+            NextEpisode();
+        }
+    }
+
     public void StartWatching()
     {
         if (Status == MediaStatus.WantToWatch)
         {
-            Status = MediaStatus.Watching;
             CurrentSeason = 1;
             CurrentEpisode = 1;
+            Status = MediaStatus.Watching;
         }
     }
 
@@ -139,12 +159,5 @@ public class Series : MediaItem
         {
             MarkWatched();
         }
-    }
-
-    public override void MarkWatched()
-    {
-        base.MarkWatched();
-        OnPropertyChanged(nameof(ProgressText));
-        OnPropertyChanged(nameof(ProgressPercent));
     }
 }

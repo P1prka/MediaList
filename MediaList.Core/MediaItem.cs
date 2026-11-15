@@ -23,6 +23,13 @@ public abstract class MediaItem : INotifyPropertyChanged
         {
             status = value;
             OnPropertyChanged(nameof(Status));
+            OnPropertyChanged(nameof(IsWatched));
+            OnPropertyChanged(nameof(HasMainAction));
+            OnPropertyChanged(nameof(MainActionText));
+            OnPropertyChanged(nameof(HasNextSeason));
+            OnPropertyChanged(nameof(ShowProgress));
+            OnPropertyChanged(nameof(ProgressText));
+            OnPropertyChanged(nameof(ProgressPercent));
         }
     }
 
@@ -35,6 +42,7 @@ public abstract class MediaItem : INotifyPropertyChanged
         {
             rating = value;
             OnPropertyChanged(nameof(Rating));
+            OnPropertyChanged(nameof(StarsText));
         }
     }
 
@@ -47,10 +55,32 @@ public abstract class MediaItem : INotifyPropertyChanged
         {
             isFavorite = value;
             OnPropertyChanged(nameof(IsFavorite));
+            OnPropertyChanged(nameof(FavoriteText));
         }
     }
 
     public abstract string TypeName { get; }
+
+    public string InfoText => $"{Genre} · {Year}";
+
+    public bool IsWatched => Status == MediaStatus.Watched;
+
+    public bool HasMainAction => Status != MediaStatus.Watched;
+
+    public virtual string MainActionText => "✓ Watched";
+
+    public virtual bool HasNextSeason => false;
+
+    public virtual bool ShowProgress => false;
+
+    public virtual string ProgressText => "";
+
+    public virtual int ProgressPercent => 0;
+
+    public string StarsText =>
+        Rating is int r ? new string('★', r) + new string('☆', 5 - r) : "☆☆☆☆☆";
+
+    public string FavoriteText => IsFavorite ? "♥" : "♡";
 
     protected MediaItem(string title, string genre, int year, MediaStatus status)
     {
@@ -81,6 +111,11 @@ public abstract class MediaItem : INotifyPropertyChanged
         Status = MediaStatus.Watched;
     }
 
+    public virtual void DoMainAction()
+    {
+        MarkWatched();
+    }
+
     public void SetRating(int value)
     {
         if (Status != MediaStatus.Watched)
@@ -94,6 +129,18 @@ public abstract class MediaItem : INotifyPropertyChanged
         }
 
         Rating = value;
+    }
+
+    public void NextRating()
+    {
+        if (Rating is int r && r < 5)
+        {
+            SetRating(r + 1);
+        }
+        else
+        {
+            SetRating(1);
+        }
     }
 
     public void ToggleFavorite()
