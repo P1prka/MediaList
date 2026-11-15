@@ -8,17 +8,37 @@ public class MediaLibrary
 
     public void Add(MediaItem item)
     {
-        bool exists = Items.Any(i =>
-            i.Title.Equals(item.Title, StringComparison.OrdinalIgnoreCase)
-            && i.Year == item.Year);
-
-        if (exists)
+        if (IsDuplicate(item, null))
         {
             throw new InvalidOperationException(
                 $"\"{item.Title}\" ({item.Year}) is already in the list.");
         }
 
         Items.Add(item);
+    }
+
+    public void Replace(MediaItem oldItem, MediaItem newItem)
+    {
+        if (IsDuplicate(newItem, oldItem))
+        {
+            throw new InvalidOperationException(
+                $"\"{newItem.Title}\" ({newItem.Year}) is already in the list.");
+        }
+
+        newItem.Id = oldItem.Id;
+
+        if (oldItem.IsFavorite)
+        {
+            newItem.ToggleFavorite();
+        }
+
+        if (oldItem.Rating is int rating && newItem.Status == MediaStatus.Watched)
+        {
+            newItem.SetRating(rating);
+        }
+
+        int index = Items.IndexOf(oldItem);
+        Items[index] = newItem;
     }
 
     public void Remove(MediaItem item)
@@ -54,5 +74,12 @@ public class MediaLibrary
 
         return list[Random.Shared.Next(list.Count)];
     }
-}
 
+    private bool IsDuplicate(MediaItem item, MediaItem? except)
+    {
+        return Items.Any(i =>
+            !ReferenceEquals(i, except)
+            && i.Title.Equals(item.Title, StringComparison.OrdinalIgnoreCase)
+            && i.Year == item.Year);
+    }
+}

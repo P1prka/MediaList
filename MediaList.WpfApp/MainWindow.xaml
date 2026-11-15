@@ -379,6 +379,11 @@
                                                             ToolTip="Favorite"
                                                             Command="{Binding DataContext.FavoriteCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                             CommandParameter="{Binding}"/>
+                                                    <Button Content="✏"
+                                                            Style="{StaticResource LightButton}"
+                                                            ToolTip="Edit"
+                                                            Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                            CommandParameter="{Binding}"/>
                                                     <Button Content="🗑"
                                                             Style="{StaticResource LightButton}"
                                                             ToolTip="Delete"
@@ -412,7 +417,7 @@
                                         Style="{StaticResource LightButton}"
                                         Margin="0"
                                         Command="{Binding CancelAddCommand}"/>
-                                <TextBlock Text="Add new title"
+                                <TextBlock Text="{Binding FormTitle}"
                                            FontSize="16"
                                            FontWeight="SemiBold"
                                            VerticalAlignment="Center"

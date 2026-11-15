@@ -24,6 +24,7 @@ public class MainViewModel : INotifyPropertyChanged
     public RelayCommand RateCommand { get; }
     public RelayCommand FavoriteCommand { get; }
     public RelayCommand DeleteCommand { get; }
+    public RelayCommand EditCommand { get; }
     public RelayCommand RandomCommand { get; }
     public RelayCommand ShowAddCommand { get; }
     public RelayCommand CancelAddCommand { get; }
@@ -157,6 +158,10 @@ public class MainViewModel : INotifyPropertyChanged
 
     public bool IsListMode => !IsAddMode;
 
+    private MediaItem? editingItem;
+
+    public string FormTitle => editingItem is null ? "Add new title" : $"Edit: {editingItem.Title}";
+
     private string newType = "Movie";
 
     public bool IsNewMovie
@@ -288,6 +293,7 @@ public class MainViewModel : INotifyPropertyChanged
         RateCommand = new RelayCommand(p => DoWithItem(p, item => item.NextRating()));
         FavoriteCommand = new RelayCommand(p => DoWithItem(p, item => item.ToggleFavorite()));
         DeleteCommand = new RelayCommand(p => DoWithItem(p, item => library.Remove(item)));
+        EditCommand = new RelayCommand(OpenEditForm);
 
         RandomCommand = new RelayCommand(PickRandom);
         ShowAddCommand = new RelayCommand(OpenAddForm);
@@ -432,6 +438,8 @@ public class MainViewModel : INotifyPropertyChanged
 
     private void OpenAddForm()
     {
+        editingItem = null;
+        OnPropertyChanged(nameof(FormTitle));
         SetNewType("Movie");
         NewTitle = "";
         NewGenre = Genres.All[0];
@@ -440,6 +448,49 @@ public class MainViewModel : INotifyPropertyChanged
         SeasonsCountText = "1";
         CurrentSeasonText = "1";
         CurrentEpisodeText = "1";
+        ErrorText = "";
+        IsAddMode = true;
+    }
+
+    private void OpenEditForm(object? parameter)
+    {
+        if (parameter is not MediaItem item)
+        {
+            return;
+        }
+
+        editingItem = item;
+        OnPropertyChanged(nameof(FormTitle));
+
+        SetNewType(item.TypeName);
+        NewTitle = item.Title;
+        NewGenre = item.Genre;
+        NewYearText = item.Year.ToString();
+        NewStatus = item.Status switch
+        {
+            MediaStatus.Watching => "Watching",
+            MediaStatus.Watched => "Watched",
+            _ => "Want to watch"
+        };
+
+        if (item is Series series)
+        {
+            SeasonInputs.Clear();
+
+            for (int i = 0; i < series.EpisodesPerSeason.Count; i++)
+            {
+                SeasonInputs.Add(new SeasonInput(i + 1)
+                {
+                    EpisodesText = series.EpisodesPerSeason[i].ToString()
+                });
+            }
+
+            seasonsCountText = series.EpisodesPerSeason.Count.ToString();
+            OnPropertyChanged(nameof(SeasonsCountText));
+            CurrentSeasonText = series.CurrentSeason.ToString();
+            CurrentEpisodeText = series.CurrentEpisode.ToString();
+        }
+
         ErrorText = "";
         IsAddMode = true;
     }
@@ -539,7 +590,14 @@ public class MainViewModel : INotifyPropertyChanged
                 item = new Movie(NewTitle, NewGenre, year, status);
             }
 
-            library.Add(item);
+            if (editingItem is null)
+            {
+                library.Add(item);
+            }
+            else
+            {
+                library.Replace(editingItem, item);
+            }
         }
         catch (ArgumentException ex)
         {
@@ -552,8 +610,9 @@ public class MainViewModel : INotifyPropertyChanged
             return;
         }
 
+        Message = editingItem is null ? $"Added {item.Title}." : $"Saved {item.Title}.";
+        editingItem = null;
         IsAddMode = false;
-        Message = $"Added {item.Title}.";
         SetStatusFilter(status);
         _ = SaveAsync();
     }
@@ -581,6 +640,3 @@ public class MainViewModel : INotifyPropertyChanged
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }
-
-
-
