@@ -6,7 +6,7 @@ public abstract class MediaItem : INotifyPropertyChanged
 {
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public Guid Id { get; private set; } = Guid.NewGuid();
+    public Guid Id { get; internal set; } = Guid.NewGuid();
 
     public string Title { get; }
 
